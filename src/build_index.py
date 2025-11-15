@@ -155,8 +155,8 @@ def build_index(
 
     # Save chunks and vectors for inspection / fallback
     chunks_path = os.path.join(out_dir, "chunks.json")
-    with open(chunks_path, "w", encoding="utf-8") as f:
-        json.dump(docs, f, ensure_ascii=False, indent=JSON_INDENT)
+    with open(chunks_path, "w", encoding="utf-8") as file:
+        json.dump(docs, file, ensure_ascii=False, indent=JSON_INDENT)
 
     vectors_path = os.path.join(out_dir, "vectors.npy")
     np.save(vectors_path, xb)
@@ -174,16 +174,16 @@ def build_index(
     faiss.write_index(index, faiss_index_path)
 
     meta = {"provider": emb.provider, "model_name": emb.model_name, "dim": dim, "num_vectors": xb.shape[0], "normalized": True}
-    with open(os.path.join(out_dir, "faiss_meta.json"), "w", encoding="utf-8") as f:
-        json.dump(meta, f, indent=JSON_INDENT)
+    with open(os.path.join(out_dir, "faiss_meta.json"), "w", encoding="utf-8") as file:
+        json.dump(meta, file, indent=JSON_INDENT)
 
     print(f"Built FAISS index (dim={dim}, n={xb.shape[0]}) and saved to {faiss_index_path}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", default="data/faq_document.txt", help="Path to input text file")
-    parser.add_argument("--out_dir", default="outputs", help="Directory to save chunks and faiss index")
+    parser.add_argument("--input", default=FAQ_FILE, help="Path to input text file")
+    parser.add_argument("--out_dir", default=OUTPUTS_DIR, help="Directory to save chunks and faiss index")
     parser.add_argument("--words_chunk_size", type=int, default=100)
     parser.add_argument("--overlap_size", type=int, default=20)
     args = parser.parse_args()
