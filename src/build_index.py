@@ -17,6 +17,9 @@ Environment:
     OPENAI_API_KEY (optional)  -> if present, OpenAI embeddings will be used
     EMBEDDING_MODEL (optional)-> default: text-embedding-3-small
 """
+import sys
+sys.dont_write_bytecode = True
+
 import os
 import json
 import argparse
@@ -28,6 +31,9 @@ import uuid
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 import faiss
+
+import dotenv
+dotenv.load_dotenv()
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
@@ -95,21 +101,11 @@ def chunk_document(document_path: Path, words_chunk_size: int = 100, overlap_siz
 
 
 class EmbeddingClient:
-    def __init__(self, model_name: Optional[str] = None):
+    def __init__(self, provider: Optional[str] = None, model_name: Optional[str] = None):
+        self.provider = provider or 'sentence-transformers'
         self.model_name = model_name or os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
-        self.provider = 'sentence-transformers'
-        self.use_openai = False
-        self.openai_client: Optional[OpenAI] = None
         self.st = None
-
-        if os.getenv("OPENAI_API_KEY"):
-            try:
-                # prefer OpenAI if key present
-                self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-                self.provider = 'openai'
-            except Exception:
-                self.openai_client = None
-                self.provider = 'sentence-transformers'
+        self.openai_client: Optional[OpenAI] = None
 
         if self.provider == 'sentence-transformers':
             self.model_name = "all-MiniLM-L6-v2"
@@ -150,7 +146,7 @@ def build_index(
     texts = [d["text"] for d in docs]
 
     emb = EmbeddingClient()
-    print(f"Generating embeddings for {len(texts)} chunks using model={emb.model_name} (openai={emb.use_openai})")
+    print(f"Generating embeddings for {len(texts)} chunks using model={emb.model_name} and provider={emb.provider}")
     vectors = emb.embed(texts)
 
     # ndarray of shape (N, dim)
