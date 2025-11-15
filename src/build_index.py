@@ -79,7 +79,7 @@ def chunk_faq_document(faq_file: Path, words_chunk_size: int = 100, overlap_size
         body = ''.join(faq.split('\n')[1:])
         chunks = sliding_window_chunking(text=body, words_chunk_size=words_chunk_size, overlap_size=overlap_size)
         for chunk in chunks:
-            docs.append({'id':str(uuid.uuid4()), 'file':str(faq_file), 'topic':topic, 'text':chunk})
+            docs.append({'uuid':str(uuid.uuid4()), 'file':str(faq_file), 'topic':topic, 'text':chunk})
 
     return docs
 
@@ -89,12 +89,13 @@ def chunk_document(document_path: Path, words_chunk_size: int = 100, overlap_siz
     """
     # TODO: Add other document types here
     if document_path == FAQ_FILE:
-        docs = chunk_faq_document(document_path, words_chunk_size, overlap_size)
+        docs = chunk_faq_document(faq_file=document_path, words_chunk_size=words_chunk_size, overlap_size=overlap_size)
+        docs = [{'id':k, 'uuid':doc['uuid'], 'file':doc['file'], 'topic':doc['topic'], 'text':doc['text']} for k, doc in enumerate(docs)]
     # Fallback to sliding window chunking for other document types
     else:
         text = load_text(document_path)
         chunks = sliding_window_chunking(text=text, words_chunk_size=words_chunk_size, overlap_size=overlap_size)
-        docs = [{'id':str(uuid.uuid4()), 'file':str(document_path), 'topic':'To be defined', 'text':chunk} for chunk in chunks]
+        docs = [{'id':k, 'uuid':str(uuid.uuid4()), 'file':str(document_path), 'topic':'To be defined', 'text':chunk} for k, chunk in enumerate(chunks)]
     
     return docs
 
