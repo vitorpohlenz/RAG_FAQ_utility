@@ -139,6 +139,11 @@ def build_index(
     words_chunk_size: int = 100,
     overlap_size: int = 20
 ):
+    """
+    Build the FAISS index for the input document. 
+    It will chunk the document into chunks of a given size with a given overlap, generate embeddings for the chunks, and build the FAISS index.
+    It will save the chunks, vectors, and FAISS index to the output directory.
+    """
     os.makedirs(out_dir, exist_ok=True)
 
     docs = chunk_document(document_path=input_path, words_chunk_size=words_chunk_size, overlap_size=overlap_size)
