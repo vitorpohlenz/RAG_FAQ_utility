@@ -1,0 +1,165 @@
+# src/query.py
+"""
+Query pipeline for the RAG_FAQ_utility project.
+
+Features:
+ - Loads precomputed chunks.json, vectors.npy, and optionally faiss.index
+ - Embeds the user question (OpenAI or sentence-transformers fallback)
+ - Performs vector search using FAISS (preferred) or pure numpy
+ - Generates an answer using an LLM (if OPENAI_API_KEY set) or extractive fallback
+ - Returns JSON: { user_question, system_answer, chunks_related }
+
+Usage:
+    python src/query.py --question "How do I invite a user?" --index_dir outputs --k 5
+"""
+import sys
+sys.dont_write_bytecode = True
+
+import os
+import json
+import argparse
+import numpy as np
+from typing import List, Dict
+from pathlib import Path
+
+# Embedding backends
+from openai import OpenAI
+import faiss
+
+# repo
+from build_index import OUTPUTS_DIR, JSON_INDENT, EmbeddingClient
+
+INDEX_DIR = OUTPUTS_DIR / "faiss.index"
+CHUNKS_PATH = OUTPUTS_DIR / "chunks.json"
+VECTORS_PATH = OUTPUTS_DIR / "vectors.npy"
+FAISS_META_PATH = OUTPUTS_DIR / "faiss_meta.json"
+FAISS_INDEX_PATH = OUTPUTS_DIR / "faiss.index"
+
+
+class QueryEngine:
+    def __init__(self, index_dir: str = INDEX_DIR):
+        self.index_dir = index_dir
+
+        if (
+            not os.path.exists(index_dir) or
+            not os.path.exists(CHUNKS_PATH) or 
+            not os.path.exists(VECTORS_PATH) or
+            not os.path.exists(FAISS_META_PATH) or
+            not os.path.exists(FAISS_INDEX_PATH)
+            ):
+            raise FileNotFoundError(f"Missing {CHUNKS_PATH}, {VECTORS_PATH}, {FAISS_META_PATH}, or {FAISS_INDEX_PATH}. Run `python src/build_index.py` first.")
+
+        # Load faiss_meta.json with metadata about the FAISS index
+        with open(FAISS_META_PATH, "r", encoding="utf-8") as file:
+            self.faiss_meta = json.load(file)
+
+        # Embedding backend
+        self.embedding_client = EmbeddingClient(provider=self.faiss_meta["provider"], model_name=self.faiss_meta["model_name"])
+
+        # Load FAISS index
+        self.faiss_index = faiss.read_index(str(FAISS_INDEX_PATH))
+
+        # Load chunks
+        with open(CHUNKS_PATH, "r", encoding="utf-8") as file:
+            self.chunks = json.load(file)
+
+        self.vectors = np.load(VECTORS_PATH)  # raw vector matrix (float32)
+
+        # Normalize for cosine similarity (used in numpy fallback)
+        norms = np.linalg.norm(self.vectors, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        self.norm_vectors = self.vectors / norms
+
+
+    def embed_query(self, text: str) -> np.ndarray:
+        """Embed query text and return normalized vector."""
+        if self.faiss_meta["provider"] == "openai":
+            resp = self.openai_client.embeddings.create(
+                model=self.faiss_meta["model_name"],
+                input=text
+            )
+            embedded = resp.data[0].embedding
+        else:
+            embedded = self.embedding_client.embed([text])[0]
+        
+        return np.array(embedded, dtype="float32", ndmin=2)
+
+    def search(self, qvec: np.ndarray, k: int = 5) -> List[Dict]:
+        """Return top-k chunks using FAISS or numpy fallback."""
+        if self.faiss_index is not None:
+            D, I = self.faiss_index.search(qvec, k)
+            results = []
+            for distance, idx in zip(D[0], I[0]):
+                if idx >= 0:
+                    results.append({
+                        "id": int(idx),
+                        "distance": float(distance),
+                        "text": self.chunks[idx]["text"]
+                    })
+            return results
+
+        # Numpy cosine fallback
+        sims = (self.norm_vectors @ qvec).tolist()
+        idxs = np.argsort(sims)[::-1][:k]
+        return [
+            {
+                "id": int(i),
+                "distance": float(sims[i]),
+                "text": self.chunks[i]["text"]
+            }
+            for i in idxs
+        ]
+
+    def generate_answer(self, question: str, retrieved: List[Dict]) -> str:
+        """Generate an answer using LLM or simple extractive fallback."""
+        if self.use_openai:
+            prompt = "You are a helpful FAQ assistant.\n"
+            prompt += "Use ONLY the following context snippets to answer.\n\n"
+
+            for i, r in enumerate(retrieved):
+                prompt += f"Snippet {i+1}: {r['text']}\n"
+
+            prompt += f"\nUser question: {question}\n"
+            prompt += "Answer concisely. If unknown, say you don't know.\n"
+
+            resp = self.openai_client.responses.create(
+                model=os.getenv("LLM_MODEL", "gpt-4o-mini"),
+                input=prompt,
+                max_output_tokens=350
+            )
+
+            # Extract generated text
+            try:
+                return resp.output_text
+            except Exception:
+                return str(resp)
+
+        # Extractive fallback
+        if not retrieved:
+            return "No relevant information found."
+
+        return (
+            f"Based on documentation: {retrieved[0]['text']}\n"
+            f"(Using extractive fallback; {len(retrieved)} snippets retrieved.)"
+        )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--question", required=True)
+    parser.add_argument("--index_dir", default=OUTPUTS_DIR)
+    parser.add_argument("--k", type=int, default=5)
+    args = parser.parse_args()
+
+    engine = QueryEngine(index_dir=args.index_dir)
+    qvec = engine.embed_query(args.question)
+    retrieved = engine.search(qvec, k=args.k)
+    answer = engine.generate_answer(args.question, retrieved)
+
+    out = {
+        "user_question": args.question,
+        "system_answer": answer,
+        "chunks_related": retrieved
+    }
+
+    print(json.dumps(out, ensure_ascii=False, indent=JSON_INDENT))
