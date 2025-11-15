@@ -1,0 +1,69 @@
+# This internal document covers policies, features, and procedures from our company.
+
+## 1. Account and Access
+Our platform provides role-based access control (RBAC). The standard roles are: Admin, HR Manager, Team Lead, and Employee. Admins can create and manage organisations, configure payroll integrations, and assign other users to roles. HR Managers can manage user records, approve time-off requests, and generate reports. Team Leads can review and approve timesheets for their direct reports. Employees can view and update their personal information, request time off, and submit expenses.
+To invite a new user, go to Settings → Users → Invite. Enter the user's email, select the appropriate role, and send the invite. Invites expire after 14 days. If a user does not receive the invite, check spam folders and confirm the email is correct. Resend the invite if needed.
+Single sign-on (SSO) using SAML 2.0 is supported. To configure SSO, provide the Identity Provider (IdP) metadata to the platform and configure the platform with the Service Provider (SP) details. Our SSO supports attribute mapping for email, first_name, last_name, and groups. When troubleshooting SSO, common issues include certificate expiry, clock skew between IdP and SP, or incorrect attribute mappings.
+Password policies are configurable at the organisation level. Default policy: minimum 8 characters, must include one uppercase, one lowercase, and one number. Password resets are handled via email link; links expire in one hour. For high security organisations, enforce multi-factor authentication (MFA) via authenticator apps or SMS.
+
+
+## 2. Billing & Payments
+Billing is processed monthly. The billing cycle runs from the 1st to the last day of the calendar month. Invoices are generated within the first three days of the next month. Subscriptions are based on active employee count at the end of the billing period. Plans include: Starter, Professional, and Enterprise. Enterprise customers may have custom pricing and contract terms.
+Payment methods supported include credit card (Stripe), ACH (US banks), and international wire transfers. For automatic credit card payments, payment retries follow an exponential backoff: retry after 1 day, 3 days, then 7 days. Failed payments after the retry schedule will result in account suspension pending collection. To update payment details, go to Settings → Billing → Payment Method.
+Refund policy: refunds are processed on a case-by-case basis and require approval from Finance. Partial refunds are pro-rated based on the unused portion of services. For charge disputes, collect the invoice number and transaction ID and escalate to the Billing team with supporting evidence.
+
+
+## 3. Payroll Integration
+We integrate with multiple payroll providers via secure API connectors. Supported providers include Provider A, Provider B, and Provider C. Configuration includes mapping pay codes, deduction codes, and bank account information. A dry-run payroll option is available to produce a preview of the payroll file without submitting payments.
+For payroll troubleshooting, common steps include verifying employee tax IDs, checking pay frequency settings, and confirming bank account routing numbers. Pay runs must be approved by an HR Manager or an Admin before submission to the payroll provider. A history of payroll runs is retained for 7 years for auditing purposes.
+
+
+## 4. Time Off and Leave Policies
+Time off types can be configured per organisation and may include vacation, sick leave, parental leave, and unpaid leave. Accrual policies: hours can accrue monthly, yearly, or be granted as an upfront balance. Carryover rules are configurable; the default is a 40-hour carryover cap. Leave requests follow an approval workflow: Employee → Team Lead → HR Manager. Cancelling a time-off request depends on its approval state; requests not yet approved can be cancelled by the requester.
+Partial-day requests and overlapping requests are handled by the system with configurable conflict rules. For statutory leave (e.g., maternity, paternity), the system provides templates and guidance, but compliance with local regulation remains the employer's responsibility.
+
+
+## 5. Performance & Reviews
+Performance review cycles are configurable: frequency (quarterly, bi-annually, annual), review forms, and rating scales. Reviews can be self-evaluations, peer reviews, and manager reviews. Calibration tools exist in the platform for HR Managers to align ratings across teams. Performance data can be exported to CSV and integrated with compensation planning modules.
+
+
+## 6. Security & Compliance
+Our platform uses TLS for network communications, stores sensitive data encrypted at rest, and uses key management best practices. Access logs and audit trails are retained according to organisational retention policies. For GDPR compliance, data subject requests (access, rectification, erasure) are processed within 30 days; legal holds may restrict deletion for compliance reasons.
+We maintain SOC2 Type II compliance and rotate credentials regularly. When a security incident occurs, follow the incident response playbook: contain, eradicate, recover, notify stakeholders, and post-incident review. Security contacts are security@example.com and the incident response team.
+
+## 7. Features & Product Workflows
+Search: the platform provides a global search across people, documents, and payroll runs. Filters include date range, role, and department. Bulk actions: HR Managers can perform bulk edits, such as changing department or manager for multiple employees.
+Data import/export: CSV templates are provided for employee bulk import. Required fields: first_name, last_name, email, start_date, role, and employee_id. Invalid rows are returned as a CSV with error messages. For export, supported formats include CSV and Excel.
+Notifications & Emails: notification preferences can be configured per user. System emails include transactional (password reset, invoice), notifications (time-off approvals), and digest emails. Email templates are editable at the organisation level for owners with Admin privileges.
+
+
+## 8. Troubleshooting common support issues
+- "I didn't receive my invite": check spam, confirm email, resend invite.
+- "My payroll file is failing": confirm mapping, tax IDs, and bank details; run a dry-run and inspect logs.
+- "How to set up SSO": supply IdP metadata and validate attributes.
+- "How to get a refund": collect invoice and transaction ID, escalate to Finance.
+
+
+## 9. Agent Handoff & Escalation
+If the RAG system cannot answer a question with sufficient confidence, the recommended next step is to provide the top 3 related FAQ chunks and offer handoff to a human agent. Tag escalations with "ESCALATE" and include context: user id, recent actions, and relevant documentation snippets.
+
+
+## 10. Data retention & privacy
+Default retention policy: 7 years for payroll and tax documents, 2 years for chat logs. Retention is configurable per organisation. Data export and legal hold options exist for compliance and litigation needs.
+
+
+## 11. API & Developer Notes
+APIs are RESTful with JSON payloads. Rate limits and auth: use API keys and request rate limiting at 60 requests per minute by default for non-enterprise plans. Webhooks: supported for events such as payroll run completed, time-off approved, and invoice generated.
+Webhook security: sign webhook payloads using HMAC with a shared secret. When configuring webhooks, validate timestamps and signatures to prevent replay attacks.
+
+
+## 12. Onboarding & Training
+Onboarding resources include guided tours, a setup checklist, and training webinars. Admins should complete basic setup: configure company profile, invite users, connect payroll provider (if required), and set up billing information.
+
+
+## Appendix: Glossary
+
+- Admin: full access user
+- HR Manager: manages people and HR workflows
+- Team Lead: approves team requests
+- Employee: end-user without admin privileges
