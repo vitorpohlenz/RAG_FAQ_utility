@@ -20,11 +20,14 @@ Environment:
 import os
 import json
 import argparse
-import math
-import re
+import numpy as np
 from typing import List, Optional
 from pathlib import Path
 import uuid
+
+from openai import OpenAI
+from sentence_transformers import SentenceTransformer
+import faiss
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
@@ -33,39 +36,12 @@ OUTPUTS_DIR = ROOT / "outputs"
 
 JSON_INDENT = 4
 
-# optional embedding backends
-try:
-    from openai import OpenAI
-    OPENAI_AVAILABLE = True
-except Exception:
-    OPENAI_AVAILABLE = False
-
-try:
-    from sentence_transformers import SentenceTransformer
-    ST_AVAILABLE = True
-except Exception:
-    ST_AVAILABLE = False
-
-# faiss
-try:
-    import faiss
-    FAISS_AVAILABLE = True
-except Exception:
-    FAISS_AVAILABLE = False
-
-import numpy as np
-
-
 def load_text(path: str) -> str:
+    """
+    Load text from a file.
+    """
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
-
-
-def split_into_sentences(text: str) -> List[str]:
-    # naive but effective for FAQ-style text
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-    sentences = [s.strip() for s in sentences if s.strip()]
-    return sentences
 
 def sliding_window_chunking(text, words_chunk_size, overlap_size):
     """
@@ -79,9 +55,7 @@ def sliding_window_chunking(text, words_chunk_size, overlap_size):
     while start < len(words):
 
         end = start + words_chunk_size
-
         chunks.append(' '.join(words[start:end]))
-
         start += words_chunk_size - overlap_size
 
     return chunks
@@ -104,6 +78,9 @@ def chunk_faq_document(faq_file: Path, words_chunk_size: int = 100, overlap_size
     return docs
 
 def chunk_document(document_path: Path, words_chunk_size: int = 100, overlap_size: int = 20) -> List[str]:
+    """
+    Chunk the document into chunks of a given size with a given overlap.
+    """
     # TODO: Add other document types here
     if document_path == FAQ_FILE:
         docs = chunk_faq_document(document_path, words_chunk_size, overlap_size)
@@ -125,7 +102,7 @@ class EmbeddingClient:
         self.openai_client: Optional[OpenAI] = None
         self.st = None
 
-        if OPENAI_AVAILABLE and os.getenv("OPENAI_API_KEY"):
+        if os.getenv("OPENAI_API_KEY"):
             try:
                 # prefer OpenAI if key present
                 self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -135,11 +112,10 @@ class EmbeddingClient:
                 self.provider = 'sentence-transformers'
 
         if self.provider == 'sentence-transformers':
-            if ST_AVAILABLE:
-                self.model_name = "all-MiniLM-L6-v2"
-                self.st = SentenceTransformer(self.model_name)
-            else:
-                raise RuntimeError("No embedding backend available. Install sentence-transformers.")
+            self.model_name = "all-MiniLM-L6-v2"
+            self.st = SentenceTransformer(self.model_name)
+        else:
+            raise RuntimeError("No embedding backend available. Install sentence-transformers.")
 
     def embed(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         """Return embedding vectors as nested Python lists. Supports batching."""
@@ -184,16 +160,12 @@ def build_index(
     np.save(vectors_path, xb)
     print(f"Saved chunks to {chunks_path} and raw vectors to {vectors_path}")
 
-    # Build FAISS index and persist it
-    if not FAISS_AVAILABLE:
-        print("FAISS not installed. Install faiss-cpu (or faiss-gpu) to enable FAISS index building.")
-        print("You can still use vectors.npy for numpy-based search.")
-        return
-
     # Normalize for cosine similarity and use IndexFlatIP (inner product on normalized vectors)
     dim = xb.shape[1]
     xb_norm = xb.copy()
     faiss.normalize_L2(xb_norm)
+    
+    # Build FAISS index and persist it
     index = faiss.IndexFlatIP(dim)
     index.add(xb_norm)
     faiss_index_path = os.path.join(out_dir, "faiss.index")
@@ -206,17 +178,17 @@ def build_index(
     print(f"Built FAISS index (dim={dim}, n={xb.shape[0]}) and saved to {faiss_index_path}")
 
 
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("--input", default="data/faq_document.txt", help="Path to input text file")
-#     parser.add_argument("--out_dir", default="outputs", help="Directory to save chunks and faiss index")
-#     parser.add_argument("--words_chunk_size", type=int, default=100)
-#     parser.add_argument("--overlap_size", type=int, default=20)
-#     args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", default="data/faq_document.txt", help="Path to input text file")
+    parser.add_argument("--out_dir", default="outputs", help="Directory to save chunks and faiss index")
+    parser.add_argument("--words_chunk_size", type=int, default=100)
+    parser.add_argument("--overlap_size", type=int, default=20)
+    args = parser.parse_args()
 
-#     build_index(
-#         input_path=args.input,
-#         out_dir=args.out_dir,
-#         words_chunk_size=args.words_chunk_size,
-#         overlap_size=args.overlap_size,
-#     )
+    build_index(
+        input_path=args.input,
+        out_dir=args.out_dir,
+        words_chunk_size=args.words_chunk_size,
+        overlap_size=args.overlap_size,
+    )
