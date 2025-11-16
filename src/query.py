@@ -100,8 +100,11 @@ class QueryEngine:
                 if idx >= 0:
                     results.append({
                         "id": int(idx),
+                        "uuid": self.chunks[idx]["uuid"],
+                        "topic": self.chunks[idx]["topic"],
                         "distance": float(distance),
-                        "text": self.chunks[idx]["text"]
+                        "text": self.chunks[idx]["text"],
+                        "file": self.chunks[idx]["file"]
                     })
             return results
 
@@ -111,8 +114,11 @@ class QueryEngine:
         return [
             {
                 "id": int(i),
+                "uuid": self.chunks[i]["uuid"],
+                "topic": self.chunks[i]["topic"],
                 "distance": float(sims[i]),
-                "text": self.chunks[i]["text"]
+                "text": self.chunks[i]["text"],
+                "file": self.chunks[i]["file"]
             }
             for i in idxs
         ]
