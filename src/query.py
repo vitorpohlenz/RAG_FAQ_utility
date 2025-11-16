@@ -10,7 +10,7 @@ Features:
  - Returns JSON: { user_question, system_answer, chunks_related }
 
 Usage:
-    python src/query.py --question "How do I invite a user?" --index_dir outputs --k 5
+    python src/query.py --question "How do I invite a user?" --index_path outputs --k 5
 """
 import sys
 sys.dont_write_bytecode = True
@@ -26,22 +26,29 @@ from pathlib import Path
 from openai import OpenAI
 import faiss
 
-# repo
-from build_index import OUTPUTS_DIR, JSON_INDENT, EmbeddingClient
+# Local imports
+from build_index import EmbeddingClient, OUTPUTS_DIR, JSON_INDENT, CHUNKS_PATH, VECTORS_PATH, FAISS_META_PATH, FAISS_INDEX_PATH
 
-INDEX_DIR = OUTPUTS_DIR / "faiss.index"
-CHUNKS_PATH = OUTPUTS_DIR / "chunks.json"
-VECTORS_PATH = OUTPUTS_DIR / "vectors.npy"
-FAISS_META_PATH = OUTPUTS_DIR / "faiss_meta.json"
-FAISS_INDEX_PATH = OUTPUTS_DIR / "faiss.index"
+from dotenv import load_dotenv
+load_dotenv()
+
+# Constants
+LLM_API_KEY = os.getenv("LLM_API_KEY")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
 
 class QueryEngine:
-    def __init__(self, index_dir: str = INDEX_DIR):
-        self.index_dir = index_dir
+    def __init__(self, index_path: str = FAISS_INDEX_PATH):
+        self.index_path = index_path
+
+        self.llm_client = OpenAI(
+            api_key=LLM_API_KEY,
+            base_url=LLM_BASE_URL
+            )
 
         if (
-            not os.path.exists(index_dir) or
+            not os.path.exists(index_path) or
             not os.path.exists(CHUNKS_PATH) or 
             not os.path.exists(VECTORS_PATH) or
             not os.path.exists(FAISS_META_PATH) or
@@ -74,7 +81,7 @@ class QueryEngine:
     def embed_query(self, text: str) -> np.ndarray:
         """Embed query text and return normalized vector."""
         if self.faiss_meta["provider"] == "openai":
-            resp = self.openai_client.embeddings.create(
+            resp = self.llm_client.embeddings.create(
                 model=self.faiss_meta["model_name"],
                 input=text
             )
@@ -84,7 +91,7 @@ class QueryEngine:
         
         return np.array(embedded, dtype="float32", ndmin=2)
 
-    def search(self, qvec: np.ndarray, k: int = 5) -> List[Dict]:
+    def search(self, qvec: np.ndarray, k: int = 3) -> List[Dict]:
         """Return top-k chunks using FAISS or numpy fallback."""
         if self.faiss_index is not None:
             D, I = self.faiss_index.search(qvec, k)
@@ -112,27 +119,27 @@ class QueryEngine:
 
     def generate_answer(self, question: str, retrieved: List[Dict]) -> str:
         """Generate an answer using LLM or simple extractive fallback."""
-        if self.use_openai:
-            prompt = "You are a helpful FAQ assistant.\n"
-            prompt += "Use ONLY the following context snippets to answer.\n\n"
 
-            for i, r in enumerate(retrieved):
-                prompt += f"Snippet {i+1}: {r['text']}\n"
+        prompt = "You are a helpful FAQ assistant.\n"
+        prompt += "Use ONLY the following context snippets to answer.\n\n"
 
-            prompt += f"\nUser question: {question}\n"
-            prompt += "Answer concisely. If unknown, say you don't know.\n"
+        for i, r in enumerate(retrieved):
+            prompt += f"Snippet {i+1}: {r['text']}\n"
 
-            resp = self.openai_client.responses.create(
-                model=os.getenv("LLM_MODEL", "gpt-4o-mini"),
-                input=prompt,
-                max_output_tokens=350
-            )
+        prompt += f"\nUser question: {question}\n"
+        prompt += "Answer concisely. If unknown, say you don't know.\n"
 
-            # Extract generated text
-            try:
-                return resp.output_text
-            except Exception:
-                return str(resp)
+        resp = self.llm_client.responses.create(
+            model=LLM_MODEL,
+            input=prompt,
+            max_output_tokens=350
+        )
+
+        # Extract generated text
+        try:
+            return resp.output_text
+        except Exception:
+            return str(resp)
 
         # Extractive fallback
         if not retrieved:
@@ -147,11 +154,11 @@ class QueryEngine:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--question", required=True)
-    parser.add_argument("--index_dir", default=OUTPUTS_DIR)
-    parser.add_argument("--k", type=int, default=5)
+    parser.add_argument("--index_path", default=OUTPUTS_DIR)
+    parser.add_argument("--k", type=int, default=3)
     args = parser.parse_args()
 
-    engine = QueryEngine(index_dir=args.index_dir)
+    engine = QueryEngine(index_path=args.index_path)
     qvec = engine.embed_query(args.question)
     retrieved = engine.search(qvec, k=args.k)
     answer = engine.generate_answer(args.question, retrieved)
