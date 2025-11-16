@@ -39,7 +39,7 @@ dotenv.load_dotenv()
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 FAQ_FILE = DATA_DIR / "faq_document.txt"
-STORAGE_DIR = ROOT / "outputs"
+STORAGE_DIR = ROOT / "storage"
 
 CHUNKS_PATH = STORAGE_DIR / "chunks.json"
 VECTORS_PATH = STORAGE_DIR / "vectors.npy"
