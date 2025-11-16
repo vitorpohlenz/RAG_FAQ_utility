@@ -144,7 +144,7 @@ class QueryEngine:
         resp = self.llm_client.responses.create(
             model=LLM_MODEL,
             input=prompt,
-            max_output_tokens=350
+            max_output_tokens=500
         )
 
         # Extract generated text
