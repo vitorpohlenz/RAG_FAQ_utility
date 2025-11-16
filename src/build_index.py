@@ -35,10 +35,16 @@ import faiss
 import dotenv
 dotenv.load_dotenv()
 
+# Constants
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 FAQ_FILE = DATA_DIR / "faq_document.txt"
 OUTPUTS_DIR = ROOT / "outputs"
+
+CHUNKS_PATH = OUTPUTS_DIR / "chunks.json"
+VECTORS_PATH = OUTPUTS_DIR / "vectors.npy"
+FAISS_META_PATH = OUTPUTS_DIR / "faiss_meta.json"
+FAISS_INDEX_PATH = OUTPUTS_DIR / "faiss.index"
 
 JSON_INDENT = 4
 
@@ -154,13 +160,11 @@ def build_index(
     xb = np.array(vectors, dtype="float32")
 
     # Save chunks and vectors for inspection / fallback
-    chunks_path = os.path.join(out_dir, "chunks.json")
-    with open(chunks_path, "w", encoding="utf-8") as file:
+    with open(CHUNKS_PATH, "w", encoding="utf-8") as file:
         json.dump(docs, file, ensure_ascii=False, indent=JSON_INDENT)
 
-    vectors_path = os.path.join(out_dir, "vectors.npy")
-    np.save(vectors_path, xb)
-    print(f"Saved chunks to {chunks_path} and raw vectors to {vectors_path}")
+    np.save(VECTORS_PATH, xb)
+    print(f"Saved chunks to {CHUNKS_PATH} and raw vectors to {VECTORS_PATH}")
 
     # Normalize for cosine similarity and use IndexFlatIP (inner product on normalized vectors)
     dim = xb.shape[1]
@@ -170,14 +174,13 @@ def build_index(
     # Build FAISS index and persist it
     index = faiss.IndexFlatIP(dim)
     index.add(xb_norm)
-    faiss_index_path = os.path.join(out_dir, "faiss.index")
-    faiss.write_index(index, faiss_index_path)
+    faiss.write_index(index, str(FAISS_INDEX_PATH))
 
     meta = {"provider": emb.provider, "model_name": emb.model_name, "dim": dim, "num_vectors": xb.shape[0], "normalized": True}
-    with open(os.path.join(out_dir, "faiss_meta.json"), "w", encoding="utf-8") as file:
+    with open(FAISS_META_PATH, "w", encoding="utf-8") as file:
         json.dump(meta, file, indent=JSON_INDENT)
 
-    print(f"Built FAISS index (dim={dim}, n={xb.shape[0]}) and saved to {faiss_index_path}")
+    print(f"Built FAISS index (dim={dim}, n={xb.shape[0]}) and saved to {FAISS_INDEX_PATH}")
 
 
 if __name__ == "__main__":
