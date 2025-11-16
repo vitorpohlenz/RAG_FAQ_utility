@@ -22,13 +22,14 @@ import argparse
 import numpy as np
 from typing import List, Dict
 from pathlib import Path
+import time
 
 # Embedding backends
 from openai import OpenAI
 import faiss
 
 # Local imports
-from build_index import EmbeddingClient, STORAGE_DIR, JSON_INDENT, CHUNKS_PATH, VECTORS_PATH, FAISS_META_PATH, FAISS_INDEX_PATH
+from build_index import EmbeddingClient, ROOT, STORAGE_DIR, JSON_INDENT, CHUNKS_PATH, VECTORS_PATH, FAISS_META_PATH, FAISS_INDEX_PATH
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -38,10 +39,28 @@ LLM_API_KEY = os.getenv("LLM_API_KEY")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL")
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
+OUTPUTS_DIR = ROOT / "outputs"
+SAMPLE_OUTPUTS_PATH = OUTPUTS_DIR / "sample_queries.json"
+METRICS_PATH = OUTPUTS_DIR / "metrics.json"
+
+def append_json(entry: dict, json_file: Path):
+    # Read existing
+    if json_file.exists():
+        try:
+            data = json.loads(json_file.read_text(encoding="utf-8"))
+        except Exception:
+            data = []
+    else:
+        data = []
+    data.append(entry)
+    json_file.write_text(json.dumps(data, indent=4), encoding="utf-8")
 
 class QueryEngine:
     def __init__(self, index_path: str = FAISS_INDEX_PATH):
         self.index_path = index_path
+        self.tokens_prompt = 0
+        self.tokens_completion = 0
+        self.total_tokens = 0
 
         self.llm_client = OpenAI(
             api_key=LLM_API_KEY,
@@ -139,19 +158,22 @@ class QueryEngine:
             prompt += f"SOURCE {i}: {filename} - {topic}\n"
             prompt += f"TEXT: {ret['text']}\n\n"
 
-        prompt += f"\nUSER QUESTION: {question}\n"
-
-        resp = self.llm_client.responses.create(
+        resp = self.llm_client.chat.completions.create(
             model=LLM_MODEL,
-            input=prompt,
-            max_output_tokens=500
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": question}
+            ],
+            max_tokens=500
         )
+        answer = resp.choices[0].message.content.strip()
+        
+        # Save tokens used for the last query
+        self.tokens_prompt = resp.usage.prompt_tokens
+        self.tokens_completion = resp.usage.completion_tokens
+        self.total_tokens = resp.usage.total_tokens
 
-        # Extract generated text
-        try:
-            return resp.output_text
-        except Exception:
-            return str(resp)
+        return answer
 
         # Extractive fallback
         if not retrieved:
@@ -171,9 +193,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     engine = QueryEngine(index_path=args.index_path)
+    
+    start_time = time.time()
     qvec = engine.embed_query(args.question)
     retrieved = engine.search(qvec, k=args.k)
+    end_time = time.time()
+    embedding_time = end_time - start_time
+    
+    start_time = time.time()
     answer = engine.generate_answer(args.question, retrieved)
+    end_time = time.time()
+    generation_time = end_time - start_time
 
     out = {
         "user_question": args.question,
@@ -181,4 +211,22 @@ if __name__ == "__main__":
         "chunks_related": retrieved
     }
 
-    print(json.dumps(out, ensure_ascii=False, indent=JSON_INDENT))
+    metrics = {
+        "question": args.question,
+        "answer": answer,
+        "tokens_prompt": engine.tokens_prompt,
+        "tokens_completion": engine.tokens_completion,
+        "total_tokens": engine.total_tokens,
+        "embedding_time": embedding_time,
+        "generation_time": generation_time,
+        "k": args.k,
+        "retrieved": retrieved,
+        "embedding_meta": engine.faiss_meta
+    }
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+    
+    append_json(out, SAMPLE_OUTPUTS_PATH)
+    append_json(metrics, METRICS_PATH)
+
+    print(out)
