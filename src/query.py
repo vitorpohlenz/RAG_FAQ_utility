@@ -37,7 +37,7 @@ load_dotenv()
 # Constants
 LLM_API_KEY = os.getenv("LLM_API_KEY")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL")
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
+LLM_MODEL = os.getenv("LLM_MODEL")
 
 OUTPUTS_DIR = ROOT / "outputs"
 SAMPLE_OUTPUTS_PATH = OUTPUTS_DIR / "sample_queries.json"
@@ -61,6 +61,7 @@ class QueryEngine:
         self.tokens_prompt = 0
         self.tokens_completion = 0
         self.total_tokens = 0
+        self.model_name = LLM_MODEL
 
         self.llm_client = OpenAI(
             api_key=LLM_API_KEY,
@@ -159,7 +160,7 @@ class QueryEngine:
             prompt += f"TEXT: {ret['text']}\n\n"
 
         resp = self.llm_client.chat.completions.create(
-            model=LLM_MODEL,
+            model=self.model_name,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": question}
@@ -214,6 +215,7 @@ if __name__ == "__main__":
     metrics = {
         "question": args.question,
         "answer": answer,
+        "model_name": engine.model_name,
         "tokens_prompt": engine.tokens_prompt,
         "tokens_completion": engine.tokens_completion,
         "total_tokens": engine.total_tokens,
