@@ -16,6 +16,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import os
+import re
 import json
 import argparse
 import numpy as np
@@ -127,13 +128,18 @@ class QueryEngine:
         """Generate an answer using LLM or simple extractive fallback."""
 
         prompt = "You are a helpful FAQ assistant.\n"
-        prompt += "Use ONLY the following context snippets to answer.\n\n"
+        prompt += "Use ONLY the information provided in the context below to answer. Answer concisely. If unknown, say you don't know.\n"
+        prompt += "If the context doesn't contain enough information to fully answer the question, explicitly state what information is missing.\n\n"
+        prompt += "CONTEXT: \n"
 
-        for i, r in enumerate(retrieved):
-            prompt += f"Snippet {i+1}: {r['text']}\n"
+        for i, ret in enumerate(retrieved):
+            
+            filename = ret['file'].split('\\')[-1]
+            topic = ret['topic']
+            prompt += f"SOURCE {i}: {filename} - {topic}\n"
+            prompt += f"TEXT: {ret['text']}\n\n"
 
-        prompt += f"\nUser question: {question}\n"
-        prompt += "Answer concisely. If unknown, say you don't know.\n"
+        prompt += f"\nUSER QUESTION: {question}\n"
 
         resp = self.llm_client.responses.create(
             model=LLM_MODEL,
