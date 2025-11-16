@@ -27,7 +27,7 @@ from openai import OpenAI
 import faiss
 
 # Local imports
-from build_index import EmbeddingClient, OUTPUTS_DIR, JSON_INDENT, CHUNKS_PATH, VECTORS_PATH, FAISS_META_PATH, FAISS_INDEX_PATH
+from build_index import EmbeddingClient, STORAGE_DIR, JSON_INDENT, CHUNKS_PATH, VECTORS_PATH, FAISS_META_PATH, FAISS_INDEX_PATH
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -154,7 +154,7 @@ class QueryEngine:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--question", required=True)
-    parser.add_argument("--index_path", default=OUTPUTS_DIR)
+    parser.add_argument("--index_path", default=STORAGE_DIR)
     parser.add_argument("--k", type=int, default=3)
     args = parser.parse_args()
 

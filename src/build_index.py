@@ -11,7 +11,7 @@ Outputs:
 Usage:
     python src/build_index.py (uses default values for words_chunk_size and overlap_size)
     or 
-    python src/build_index.py --input data/faq_document.txt --out_dir outputs --words_chunk_size 100 --overlap_size 20 (to specify different values for words_chunk_size and overlap_size)
+    python src/build_index.py --input data/faq_document.txt --store_dir outputs --words_chunk_size 100 --overlap_size 20 (to specify different values for words_chunk_size and overlap_size)
 
 Environment:
     OPENAI_API_KEY (optional)  -> if present, OpenAI embeddings will be used
@@ -39,12 +39,12 @@ dotenv.load_dotenv()
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 FAQ_FILE = DATA_DIR / "faq_document.txt"
-OUTPUTS_DIR = ROOT / "outputs"
+STORAGE_DIR = ROOT / "outputs"
 
-CHUNKS_PATH = OUTPUTS_DIR / "chunks.json"
-VECTORS_PATH = OUTPUTS_DIR / "vectors.npy"
-FAISS_META_PATH = OUTPUTS_DIR / "faiss_meta.json"
-FAISS_INDEX_PATH = OUTPUTS_DIR / "faiss.index"
+CHUNKS_PATH = STORAGE_DIR / "chunks.json"
+VECTORS_PATH = STORAGE_DIR / "vectors.npy"
+FAISS_META_PATH = STORAGE_DIR / "faiss_meta.json"
+FAISS_INDEX_PATH = STORAGE_DIR / "faiss.index"
 
 JSON_INDENT = 4
 
@@ -138,7 +138,7 @@ class EmbeddingClient:
 
 def build_index(
     input_path: str = FAQ_FILE,
-    out_dir: str = OUTPUTS_DIR,
+    store_dir: str = STORAGE_DIR,
     words_chunk_size: int = 100,
     overlap_size: int = 20
 ):
@@ -147,7 +147,7 @@ def build_index(
     It will chunk the document into chunks of a given size with a given overlap, generate embeddings for the chunks, and build the FAISS index.
     It will save the chunks, vectors, and FAISS index to the output directory.
     """
-    os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(store_dir, exist_ok=True)
 
     docs = chunk_document(document_path=input_path, words_chunk_size=words_chunk_size, overlap_size=overlap_size)
     texts = [d["text"] for d in docs]
@@ -186,14 +186,14 @@ def build_index(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", default=FAQ_FILE, help="Path to input text file")
-    parser.add_argument("--out_dir", default=OUTPUTS_DIR, help="Directory to save chunks and faiss index")
+    parser.add_argument("--store_dir", default=STORAGE_DIR, help="Directory to save chunks and faiss index")
     parser.add_argument("--words_chunk_size", type=int, default=100)
     parser.add_argument("--overlap_size", type=int, default=20)
     args = parser.parse_args()
 
     build_index(
         input_path=args.input,
-        out_dir=args.out_dir,
+        store_dir=args.store_dir,
         words_chunk_size=args.words_chunk_size,
         overlap_size=args.overlap_size,
     )
