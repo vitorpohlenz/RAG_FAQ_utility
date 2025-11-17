@@ -165,7 +165,8 @@ class QueryEngine:
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": question}
             ],
-            max_tokens=500
+            max_tokens=500,
+            temperature=1
         )
         answer = resp.choices[0].message.content.strip()
         
