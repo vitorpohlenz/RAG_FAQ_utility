@@ -10,7 +10,7 @@ Features:
  - Returns JSON: { user_question, system_answer, chunks_related }
 
 Usage:
-    python src/query.py --question "How do I invite a user?" --index_path outputs --k 5
+    python src/query.py --question "How do I invite a user?"
 """
 import sys
 sys.dont_write_bytecode = True
