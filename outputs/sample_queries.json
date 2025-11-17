@@ -1,0 +1,122 @@
+[
+    {
+        "user_question": "What is RBAC?",
+        "system_answer": "RBAC stands for role-based access control. It is a system that assigns permissions based on user roles\u2014such as Admin, HR Manager, Team Lead, and Employee\u2014to control access to different platform features.",
+        "chunks_related": [
+            {
+                "id": 0,
+                "uuid": "750140b0-2037-45d3-a4f6-6b22911517a3",
+                "topic": " 1. Account and Access",
+                "distance": 0.47411584854125977,
+                "text": "Our platform provides role-based access control (RBAC). The standard roles are: Admin, HR Manager, Team Lead, and Employee. Admins can create and manage organisations, configure payroll integrations, and assign other users to roles. HR Managers can manage user records, approve time-off requests, and generate reports. Team Leads can review and approve timesheets for their direct reports. Employees can view and update their personal information, request time off, and submit expenses.To invite a new user, go to Settings \u2192 Users \u2192 Invite. Enter the user's email, select the appropriate role, and send the invite. Invites expire after 14 days. If a",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            },
+            {
+                "id": 20,
+                "uuid": "3d45cf79-4016-4c0a-9ad0-93274f9ddd5a",
+                "topic": " Appendix: Glossary",
+                "distance": 0.19793668389320374,
+                "text": "- Admin: full access user- HR Manager: manages people and HR workflows- Team Lead: approves team requests- Employee: end-user without admin privileges",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            },
+            {
+                "id": 19,
+                "uuid": "a114ee92-ed51-4606-ab1a-965b33ad3c21",
+                "topic": " 12. Onboarding & Training",
+                "distance": 0.11597014218568802,
+                "text": "Onboarding resources include guided tours, a setup checklist, and training webinars. Admins should complete basic setup: configure company profile, invite users, connect payroll provider (if required), and set up billing information.",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            }
+        ]
+    },
+    {
+        "user_question": "How do I invite a new user?",
+        "system_answer": "To invite a new user, go to Settings \u2192 Users \u2192 Invite. Enter the user's email, select the appropriate role, and send the invite. The invite expires after 14 days.",
+        "chunks_related": [
+            {
+                "id": 0,
+                "uuid": "750140b0-2037-45d3-a4f6-6b22911517a3",
+                "topic": " 1. Account and Access",
+                "distance": 0.4569512605667114,
+                "text": "Our platform provides role-based access control (RBAC). The standard roles are: Admin, HR Manager, Team Lead, and Employee. Admins can create and manage organisations, configure payroll integrations, and assign other users to roles. HR Managers can manage user records, approve time-off requests, and generate reports. Team Leads can review and approve timesheets for their direct reports. Employees can view and update their personal information, request time off, and submit expenses.To invite a new user, go to Settings \u2192 Users \u2192 Invite. Enter the user's email, select the appropriate role, and send the invite. Invites expire after 14 days. If a",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            },
+            {
+                "id": 1,
+                "uuid": "07960a0c-7e6e-41fb-b86d-7598560f5926",
+                "topic": " 1. Account and Access",
+                "distance": 0.44128525257110596,
+                "text": "Invite. Enter the user's email, select the appropriate role, and send the invite. Invites expire after 14 days. If a user does not receive the invite, check spam folders and confirm the email is correct. Resend the invite if needed.Single sign-on (SSO) using SAML 2.0 is supported. To configure SSO, provide the Identity Provider (IdP) metadata to the platform and configure the platform with the Service Provider (SP) details. Our SSO supports attribute mapping for email, first_name, last_name, and groups. When troubleshooting SSO, common issues include certificate expiry, clock skew between IdP and SP, or incorrect attribute mappings.Password policies are",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            },
+            {
+                "id": 15,
+                "uuid": "4e480b8b-cd98-4679-a6a3-0a6618a9f497",
+                "topic": " 8. Troubleshooting common support issues",
+                "distance": 0.3252987563610077,
+                "text": "- \"I didn't receive my invite\": check spam, confirm email, resend invite.- \"My payroll file is failing\": confirm mapping, tax IDs, and bank details; run a dry-run and inspect logs.- \"How to set up SSO\": supply IdP metadata and validate attributes.- \"How to get a refund\": collect invoice and transaction ID, escalate to Finance.",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            }
+        ]
+    },
+    {
+        "user_question": "How can I request my vacations?",
+        "system_answer": "You can request your vacations through the system by submitting a time-off request for vacation leave. The process follows an approval workflow: Employee \u2192 Team Lead \u2192 HR Manager. If you haven't done so already, go to the system, navigate to the time-off request section, select vacation, and submit your request.",
+        "chunks_related": [
+            {
+                "id": 8,
+                "uuid": "bdc25cc8-bc31-425c-926f-a0d2fcd37baa",
+                "topic": " 4. Time Off and Leave Policies",
+                "distance": 0.3217657208442688,
+                "text": "Time off types can be configured per organisation and may include vacation, sick leave, parental leave, and unpaid leave. Accrual policies: hours can accrue monthly, yearly, or be granted as an upfront balance. Carryover rules are configurable; the default is a 40-hour carryover cap. Leave requests follow an approval workflow: Employee \u2192 Team Lead \u2192 HR Manager. Cancelling a time-off request depends on its approval state; requests not yet approved can be cancelled by the requester.Partial-day requests and overlapping requests are handled by the system with configurable conflict rules. For statutory leave (e.g., maternity, paternity), the system provides templates and",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            },
+            {
+                "id": 15,
+                "uuid": "4e480b8b-cd98-4679-a6a3-0a6618a9f497",
+                "topic": " 8. Troubleshooting common support issues",
+                "distance": 0.2477060854434967,
+                "text": "- \"I didn't receive my invite\": check spam, confirm email, resend invite.- \"My payroll file is failing\": confirm mapping, tax IDs, and bank details; run a dry-run and inspect logs.- \"How to set up SSO\": supply IdP metadata and validate attributes.- \"How to get a refund\": collect invoice and transaction ID, escalate to Finance.",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            },
+            {
+                "id": 0,
+                "uuid": "750140b0-2037-45d3-a4f6-6b22911517a3",
+                "topic": " 1. Account and Access",
+                "distance": 0.23475828766822815,
+                "text": "Our platform provides role-based access control (RBAC). The standard roles are: Admin, HR Manager, Team Lead, and Employee. Admins can create and manage organisations, configure payroll integrations, and assign other users to roles. HR Managers can manage user records, approve time-off requests, and generate reports. Team Leads can review and approve timesheets for their direct reports. Employees can view and update their personal information, request time off, and submit expenses.To invite a new user, go to Settings \u2192 Users \u2192 Invite. Enter the user's email, select the appropriate role, and send the invite. Invites expire after 14 days. If a",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            }
+        ]
+    },
+    {
+        "user_question": "How can I buy a car?",
+        "system_answer": "The provided sources do not contain information about buying a car.",
+        "chunks_related": [
+            {
+                "id": 15,
+                "uuid": "4e480b8b-cd98-4679-a6a3-0a6618a9f497",
+                "topic": " 8. Troubleshooting common support issues",
+                "distance": 0.10429421067237854,
+                "text": "- \"I didn't receive my invite\": check spam, confirm email, resend invite.- \"My payroll file is failing\": confirm mapping, tax IDs, and bank details; run a dry-run and inspect logs.- \"How to set up SSO\": supply IdP metadata and validate attributes.- \"How to get a refund\": collect invoice and transaction ID, escalate to Finance.",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            },
+            {
+                "id": 19,
+                "uuid": "a114ee92-ed51-4606-ab1a-965b33ad3c21",
+                "topic": " 12. Onboarding & Training",
+                "distance": 0.0892205536365509,
+                "text": "Onboarding resources include guided tours, a setup checklist, and training webinars. Admins should complete basic setup: configure company profile, invite users, connect payroll provider (if required), and set up billing information.",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            },
+            {
+                "id": 16,
+                "uuid": "4c37b0db-1cfa-46df-908f-45eca1b157db",
+                "topic": " 9. Agent Handoff & Escalation",
+                "distance": 0.07948766648769379,
+                "text": "If the RAG system cannot answer a question with sufficient confidence, the recommended next step is to provide the top 3 related FAQ chunks and offer handoff to a human agent. Tag escalations with \"ESCALATE\" and include context: user id, recent actions, and relevant documentation snippets.",
+                "file": "C:\\Users\\vitor.pohlenz\\vpz\\RAG_FAQ_utility\\data\\faq_document.txt"
+            }
+        ]
+    }
+]
